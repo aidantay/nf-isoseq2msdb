@@ -3,15 +3,15 @@ title: Contributing
 markdownPlugin: checklist
 ---
 
-# `nf/isoseq2msdb`: Contributing guidelines
+# `aidantay/nf-isoseq2msdb`: Contributing guidelines
 
 Hi there!
-Thanks for taking an interest in improving nf/isoseq2msdb.
+Thanks for taking an interest in improving aidantay/nf-isoseq2msdb.
 
-This page describes the recommended nf-core way to contribute to both nf/isoseq2msdb and nf-core pipelines in general, including:
+This page describes the recommended nf-core way to contribute to both aidantay/nf-isoseq2msdb and nf-core pipelines in general, including:
 
 - [General contribution guidelines](#general-contribution-guidelines): common procedures or guides across all nf-core pipelines.
-- [Pipeline-specific contribution guidelines](#pipeline-specific-contribution-guidelines): procedures or guides specific to the development conventions of nf/isoseq2msdb.
+- [Pipeline-specific contribution guidelines](#pipeline-specific-contribution-guidelines): procedures or guides specific to the development conventions of aidantay/nf-isoseq2msdb.
 
 ## General contribution guidelines
 
@@ -20,8 +20,8 @@ This page describes the recommended nf-core way to contribute to both nf/isoseq2
 To contribute code to any nf-core pipeline:
 
 - [ ] Ensure you have Nextflow, nf-core tools, and nf-test installed. See the [nf-core/tools repository](https://github.com/nf-core/tools) for instructions.
-- [ ] Check whether a GitHub [issue](https://github.com/nf/isoseq2msdb/issues) about your idea already exists. If an issue does not exist, create one so that others are aware you are working on it.
-- [ ] [Fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) the [nf/isoseq2msdb repository](https://github.com/nf/isoseq2msdb) to your GitHub account.
+- [ ] Check whether a GitHub [issue](https://github.com/aidantay/nf-isoseq2msdb/issues) about your idea already exists. If an issue does not exist, create one so that others are aware you are working on it.
+- [ ] [Fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) the [aidantay/nf-isoseq2msdb repository](https://github.com/aidantay/nf-isoseq2msdb) to your GitHub account.
 - [ ] Create a branch on your forked repository and make your changes following [pipeline conventions](#pipeline-contribution-conventions) (if applicable).
 - [ ] To fix major bugs, name your branch `patch` and follow the [patch release](#patch-release) process.
 - [ ] Update relevant documentation within the `docs/` folder, use nf-core/tools to update `nextflow_schema.json`, and update `CITATIONS.md`.
@@ -59,7 +59,7 @@ For more information about linting tests, see [nf-core/tools API documentation](
 
 ### Pipeline contribution conventions
 
-nf-core semi-standardises how you write code and other contributions to make the nf/isoseq2msdb code and processing logic more understandable for new contributors and to ensure quality.
+nf-core semi-standardises how you write code and other contributions to make the aidantay/nf-isoseq2msdb code and processing logic more understandable for new contributors and to ensure quality.
 
 #### Add a new pipeline step
 

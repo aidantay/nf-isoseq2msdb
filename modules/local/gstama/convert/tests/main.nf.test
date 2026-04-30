@@ -1,0 +1,38 @@
+nextflow_process {
+
+    name "Test Process GSTAMA_CONVERT"
+    script "../main.nf"
+    process "GSTAMA_CONVERT"
+    tag "modules"
+    tag "modules_local"
+    tag "gstama"
+    tag "gstama/convert"
+
+    test("stub") {
+        options "-stub"
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file('test_classification.txt'),
+                    file('test_isoforms.gtf')
+                ]
+                input[1] = file('test_reference.fasta')
+                """
+            }
+        }
+
+        then {
+            assertAll (
+                { assert process.success },
+                { assert snapshot(
+                    process.out.gff3,
+                    process.out.classification,
+                    process.out.faa,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+}

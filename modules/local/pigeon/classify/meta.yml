@@ -1,0 +1,64 @@
+name: pigeon_classify
+description: Classify full-length transcript isoforms against a reference annotation using the SQANTI3 nomenclature.
+keywords:
+  - isoseq
+  - pigeon
+  - classify
+  - transcriptome
+  - pacbio
+tools:
+  - pigeon:
+      description: Transcript Toolkit for classification and filtering of Iso-Seq data.
+      homepage: https://isoseq.how/pigeon/
+      documentation: https://isoseq.how/pigeon/
+      licence: ["PacBio"]
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - gff:
+      type: file
+      description: Collapsed isoforms in GFF format.
+      pattern: "*.gff"
+  - fasta:
+      type: file
+      description: Reference genome FASTA file.
+      pattern: "*.{fasta,fa}"
+  - gtf:
+      type: file
+      description: Reference annotation GTF file.
+      pattern: "*.gtf"
+  - flnc:
+      type: file
+      description: FLNC count information (e.g., abundance.txt from isoseq collapse).
+      pattern: "*.txt"
+  - cage_bed:
+      type: file
+      description: CAGE peak data in BED format.
+      pattern: "*.bed"
+  - polya_list:
+      type: file
+      description: Poly-A motif list.
+      pattern: "*.txt"
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - classification:
+      type: file
+      description: The main results file containing structural categories.
+      pattern: "*.classification.txt"
+  - junctions:
+      type: file
+      description: Detailed information about every splice junction identified.
+      pattern: "*.junctions.txt"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+authors:
+  - "@aidantay"

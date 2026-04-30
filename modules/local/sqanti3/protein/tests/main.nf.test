@@ -1,0 +1,38 @@
+nextflow_process {
+
+    name "Test Process SQANTI3_PROTEIN"
+    script "../main.nf"
+    process "SQANTI3_PROTEIN"
+    tag "modules"
+    tag "modules_local"
+    tag "sqanti3"
+    tag "sqanti3/protein"
+
+    test("stub") {
+        options "-stub"
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id:'test' ],
+                    file('test_classification.txt'),
+                    file('test_isoforms.gtf')
+                ]
+                input[1] = file('test_reference.fasta')
+                """
+            }
+        }
+
+        then {
+            assertAll (
+                { assert process.success },
+                { assert snapshot(
+                    process.out.gff3,
+                    process.out.classification,
+                    process.out.faa,
+                    process.out.versions
+                ).match() }
+            )
+        }
+    }
+}

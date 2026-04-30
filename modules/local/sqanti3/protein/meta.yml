@@ -1,0 +1,73 @@
+name: "sqanti3_protein"
+description: Characterize protein-level isoforms and transfer functional annotations from a reference to long-read defined transcriptomes.
+keywords:
+  - sqanti3
+  - proteogenomics
+  - protein sequence database
+  - isoforms
+tools:
+  - "sqanti3":
+      description: "SQANTI3 is the latest version of the SQANTI (Structural and Quality Annotation of Novel Transcript Isoforms) software."
+      homepage: "https://github.com/ConesaLab/SQANTI3"
+      documentation: "https://github.com/ConesaLab/SQANTI3/wiki"
+      tool_dev_url: "https://github.com/ConesaLab/SQANTI3"
+      doi: "10.1038/s41467-024-45455-7"
+      licence:
+        - "GPL-3.0-or-later"
+      identifier: ""
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. [ id:'sample1' ]
+    - classification:
+        type: file
+        description: SQANTI3 classification file (*_classification.txt)
+        pattern: "*.txt"
+    - gtf:
+        type: file
+        description: SQANTI3 GTF file (*_corrected.gtf)
+        pattern: "*.gtf"
+  - - fasta:
+        type: file
+        description: Reference genome FASTA file
+        pattern: "*.{fasta,fa,fna}"
+output:
+  - gff3:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'sample1' ]
+      - "*.cds.gff3":
+          type: file
+          description: Corrected CDS GFF3 file
+          pattern: "*.cds.gff3"
+  - classification:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'sample1' ]
+      - "*.protein_classification.txt":
+          type: file
+          description: Protein level classification table
+          pattern: "*.protein_classification.txt"
+  - faa:
+      - meta:
+          type: map
+          description: |
+            Groovy Map containing sample information
+            e.g. [ id:'sample1' ]
+      - "*.faa":
+          type: file
+          description: Predicted amino acid sequences FASTA file
+          pattern: "*.faa"
+  - versions:
+      - versions.yml:
+          type: file
+          description: File containing software versions
+          pattern: "versions.yml"
+authors:
+  - "@apaf"

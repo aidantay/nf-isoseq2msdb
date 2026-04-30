@@ -1,0 +1,40 @@
+name: pigeon_report
+description: Generate a summary report from pigeon classification results.
+keywords:
+  - isoseq
+  - pigeon
+  - report
+  - transcriptome
+  - pacbio
+tools:
+  - pigeon:
+      description: Transcript Toolkit for classification and filtering of Iso-Seq data.
+      homepage: https://isoseq.how/pigeon/
+      documentation: https://isoseq.how/pigeon/
+      licence: ["PacBio"]
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - classification:
+      type: file
+      description: Classification results from pigeon classify (or filter).
+      pattern: "*.classification.txt"
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - report:
+      type: file
+      description: Summary report in PDF format.
+      pattern: "*.pdf"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+authors:
+  - "@aidantay"

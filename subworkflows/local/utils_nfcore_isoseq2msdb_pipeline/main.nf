@@ -1,5 +1,5 @@
 //
-// Subworkflow with functionality specific to the nf/isoseq2msdb pipeline
+// Subworkflow with functionality specific to the aidantay/nf-isoseq2msdb pipeline
 //
 
 /*
@@ -25,18 +25,18 @@ include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipelin
 workflow PIPELINE_INITIALISATION {
 
     take:
-    version           // boolean: Display version and exit
-    validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
-    monochrome_logs   // boolean: Do not use coloured log outputs
-    nextflow_cli_args //   array: List of positional nextflow CLI args
-    outdir            //  string: The output directory where the results will be saved
-    input             //  string: Path to input samplesheet
-    help              // boolean: Display help message and exit
-    help_full         // boolean: Show the full help message
-    show_hidden       // boolean: Show hidden parameters in the help message
+    version              // boolean: Display version and exit
+    validate_params      // boolean: Boolean whether to validate parameters against the schema at runtime
+    monochrome_logs      // boolean: Do not use coloured log outputs
+    nextflow_cli_args    //   array: List of positional nextflow CLI args
+    outdir               //  string: The output directory where the results will be saved
+    input                //  string: Path to input samplesheet
+    variantcalling_input //  string: Path to variantcalling input samplesheet
+    help                 // boolean: Display help message and exit
+    help_full            // boolean: Show the help message
+    show_hidden          // boolean: Show hidden parameters in the help message
 
     main:
-
     ch_versions = channel.empty()
 
     //
@@ -52,7 +52,6 @@ workflow PIPELINE_INITIALISATION {
     //
     // Validate parameters and generate parameter summary to stdout
     //
-
     def before_text = ""
     def after_text = ""
     if (monochrome_logs) {
@@ -81,32 +80,40 @@ workflow PIPELINE_INITIALISATION {
     )
 
     //
+    // Custom validation for pipeline parameters
+    //
+    validateInputParameters()
+
+    //
     // Create channel from input file provided through params.input
     //
 
     channel
-        .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
+        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
         .map {
-            meta, fastq_1, fastq_2 ->
-                if (!fastq_2) {
-                    return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
-                } else {
-                    return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
-                }
-        }
-        .groupTuple()
-        .map { samplesheet ->
-            validateInputSamplesheet(samplesheet)
-        }
-        .map {
-            meta, fastqs ->
-                return [ meta, fastqs.flatten() ]
+            meta, bam, bed ->
+                return [ meta, file(bam), file(bed) ]
         }
         .set { ch_samplesheet }
 
+    //
+    // Create channel from input file provided through params.variantcalling_input
+    //
+    ch_variantcalling_input = channel.empty()
+    if (variantcalling_input) {
+        channel
+            .fromList(samplesheetToList(variantcalling_input, "${projectDir}/assets/schema_variantcalling_input.json"))
+            .map {
+                meta, variantcaller, vcf, tbi ->
+                    return [ meta + [variant_caller: variantcaller], file(vcf), file(tbi) ]
+            }
+            .set { ch_variantcalling_input }
+    }
+
     emit:
-    samplesheet = ch_samplesheet
-    versions    = ch_versions
+    samplesheet          = ch_samplesheet
+    variantcalling_input = ch_variantcalling_input
+    versions             = ch_versions
 }
 
 /*
@@ -121,20 +128,18 @@ workflow PIPELINE_COMPLETION {
     monochrome_logs // boolean: Disable ANSI colour codes in log output
 
     main:
-
     //
     // Completion email and summary
     //
     workflow.onComplete {
-
         completionSummary(monochrome_logs)
-
     }
 
     workflow.onError {
         log.error "Pipeline failed. Please refer to troubleshooting docs for common issues: https://nf-co.re/docs/running/troubleshooting"
     }
 }
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -143,19 +148,20 @@ workflow PIPELINE_COMPLETION {
 */
 
 //
-// Validate channels from input samplesheet
+// Check and validate pipeline parameters
 //
-def validateInputSamplesheet(input) {
-    def (metas, fastqs) = input[1..2]
-
-    // Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
-    def endedness_ok = metas.collect{ meta -> meta.single_end }.unique().size == 1
-    if (!endedness_ok) {
-        error("Please check input samplesheet -> Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end: ${metas[0].id}")
+def validateInputParameters() {
+    if (!params.fasta) {
+        error "Mandatory parameter --fasta is missing."
     }
-
-    return [ metas[0], fastqs ]
+    if (!params.gtf && !params.gff) {
+        error "Either --gtf or --gff must be provided."
+    }
+    if (params.gtf && params.gff) {
+        error "Please provide either --gtf or --gff, not both."
+    }
 }
+
 //
 // Generate methods description for MultiQC
 //
@@ -165,7 +171,6 @@ def toolCitationText() {
     // Uncomment function in methodsDescriptionText to render in MultiQC report
     def citation_text = [
             "Tools used in the workflow included:",
-            "FastQC (Andrews 2010),",
             "MultiQC (Ewels et al. 2016)",
             "."
         ].join(' ').trim()
@@ -178,7 +183,6 @@ def toolBibliographyText() {
     // Can use ternary operators to dynamically construct based conditions, e.g. params["run_xyz"] ? "<li>Author (2023) Pub name, Journal, DOI</li>" : "",
     // Uncomment function in methodsDescriptionText to render in MultiQC report
     def reference_text = [
-            "<li>Andrews S, (2010) FastQC, URL: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/).</li>",
             "<li>Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics , 32(19), 3047–3048. doi: /10.1093/bioinformatics/btw354</li>"
         ].join(' ').trim()
 

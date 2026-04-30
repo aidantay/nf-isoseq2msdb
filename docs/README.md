@@ -1,6 +1,6 @@
-# nf/isoseq2msdb: Documentation
+# aidantay/nf-isoseq2msdb: Documentation
 
-The nf/isoseq2msdb documentation is split into the following pages:
+The aidantay/nf-isoseq2msdb documentation is split into the following pages:
 
 - [Usage](usage.md)
   - An overview of how the pipeline works, how to run it and a description of all of the different command-line flags.

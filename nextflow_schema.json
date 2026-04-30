@@ -1,8 +1,8 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/nf/isoseq2msdb/master/nextflow_schema.json",
-    "title": "nf/isoseq2msdb pipeline parameters",
-    "description": "Test",
+    "$id": "https://raw.githubusercontent.com/aidantay/nf-isoseq2msdb/master/nextflow_schema.json",
+    "title": "aidantay/nf-isoseq2msdb pipeline parameters",
+    "description": "isoseq2msdb",
     "type": "object",
     "$defs": {
         "input_output_options": {
@@ -20,7 +20,18 @@
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
+                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/isoseq2msdb/usage#samplesheet-input).",
+                    "fa_icon": "fas fa-file-csv"
+                },
+                "variantcalling_input": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "schema": "assets/schema_variantcalling_input.json",
+                    "mimetype": "text/csv",
+                    "pattern": "^\\S+\\.csv$",
+                    "description": "Path to comma-separated file containing pre-called VCF files.",
+                    "help_text": "Use this parameter to specify a samplesheet containing paths to VCF files. If provided, variant calling steps (Clair3 and DeepVariant) will be bypassed. It has to be a comma-separated file with 3 columns (sample, variantcaller, vcf), and a header row.",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
@@ -29,10 +40,203 @@
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "email": {
+                    "type": "string",
+                    "description": "Email address for completion summary.",
+                    "fa_icon": "fas fa-envelope",
+                    "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
+                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
+                },
                 "multiqc_title": {
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
+                }
+            }
+        },
+        "reference_genome_options": {
+            "title": "Reference genome options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Reference genome related files and options required for the workflow.",
+            "required": ["fasta"],
+            "properties": {
+                "fasta": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
+                    "description": "Path to FASTA genome file.",
+                    "help_text": "This parameter is *mandatory* for the workflow.",
+                    "fa_icon": "far fa-file-code"
+                },
+                "gtf": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.gtf(\\.gz)?$",
+                    "description": "Path to GTF genome annotation file.",
+                    "fa_icon": "fas fa-file-code"
+                },
+                "gff": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.gff?3?(\\.gz)?$",
+                    "description": "Path to GFF3 genome annotation file.",
+                    "fa_icon": "fas fa-file-code"
+                }
+            }
+        },
+        "bam_options": {
+            "title": "BAM options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "BAM related files and options required for the workflow.",
+            "properties": {
+                "save_merged": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Save merged bam files in the output directory.",
+                    "fa_icon": "fas fa-save"
+                }
+            }
+        },
+        "variant_calling_options": {
+            "title": "Variant calling options",
+            "type": "object",
+            "fa_icon": "fas fa-microscope",
+            "description": "Options for variant calling using Clair3 and DeepVariant.",
+            "properties": {
+                "clair3_variant_model": {
+                    "type": "string",
+                    "description": "Name of a prepackaged Clair3 model.",
+                    "fa_icon": "fas fa-cube"
+                },
+                "clair3_user_variant_model": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Path to a user-provided Clair3 model directory.",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "clair3_platform": {
+                    "type": "string",
+                    "enum": ["ont", "hifi", "ilmn"],
+                    "description": "Platform used for sequencing.",
+                    "fa_icon": "fas fa-laptop-code"
+                },
+                "deepvariant_par_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to a BED file containing PAR regions for DeepVariant.",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "deepvariant_model": {
+                    "type": "string",
+                    "enum": ["WGS", "WES", "PACBIO", "ONT_R104", "HYBRID"],
+                    "description": "Pre-trained model to be used for DeepVariant.",
+                    "fa_icon": "fas fa-cube"
+                },
+                "skip_deepvariant": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip DeepVariant variant calling.",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "bcftools_filter_args": {
+                    "type": "string",
+                    "description": "Additional arguments for bcftools filter.",
+                    "fa_icon": "fas fa-filter"
+                }
+            }
+        },
+        "genome_options": {
+            "title": "Genome options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Options for genome processing.",
+            "properties": {
+                "skip_gffread": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip GFFREAD_GTF and GFFREAD_GFF.",
+                    "fa_icon": "fas fa-fast-forward"
+                }
+            }
+        },
+        "transcriptome_options": {
+            "title": "Transcriptome options",
+            "type": "object",
+            "fa_icon": "fas fa-dna",
+            "description": "Options for transcriptome processing and ORF prediction.",
+            "properties": {
+                "transdecoder_longorf_args": {
+                    "type": "string",
+                    "description": "Additional arguments for TransDecoder.LongOrfs.",
+                    "fa_icon": "fas fa-terminal"
+                },
+                "transdecoder_predict_args": {
+                    "type": "string",
+                    "description": "Additional arguments for TransDecoder.Predict.",
+                    "fa_icon": "fas fa-terminal"
+                },
+                "skip_transcripts_subset": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip SEQKIT_HEAD to use all transcripts.",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "transcripts_head_count": {
+                    "type": "integer",
+                    "default": 10,
+                    "description": "Number of transcripts to subset using seqkit head.",
+                    "fa_icon": "fas fa-list-ol"
+                }
+            }
+        },
+        "proteogenomic_options": {
+            "title": "Proteogenomic options",
+            "type": "object",
+            "fa_icon": "fas fa-database",
+            "description": "Options for proteogenomic search and protein database generation.",
+            "properties": {
+                "blastp_db": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to BLASTP database.",
+                    "fa_icon": "fas fa-database"
+                },
+                "hmmsearch_db": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to HMMER database (e.g. Pfam-A.hmm).",
+                    "fa_icon": "fas fa-database"
+                },
+                "blastp_args": {
+                    "type": "string",
+                    "default": "-max_target_seqs 1 -evalue 1e-5",
+                    "description": "Additional arguments for BLASTP.",
+                    "fa_icon": "fas fa-terminal"
+                },
+                "skip_blastp": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip BLASTP search.",
+                    "fa_icon": "fas fa-fast-forward"
+                },
+                "hmmsearch_args": {
+                    "type": "string",
+                    "description": "Additional arguments for HMMER hmmsearch.",
+                    "fa_icon": "fas fa-terminal"
+                },
+                "skip_hmmsearch": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip HMMER hmmsearch.",
+                    "fa_icon": "fas fa-fast-forward"
                 }
             }
         },
@@ -106,6 +310,20 @@
                     "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
                     "hidden": true
                 },
+                "email_on_fail": {
+                    "type": "string",
+                    "description": "Email address for completion summary, only when pipeline fails.",
+                    "fa_icon": "fas fa-exclamation-triangle",
+                    "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$",
+                    "help_text": "An email address to send a summary email to when the pipeline is completed - ONLY sent if the pipeline does not exit successfully.",
+                    "hidden": true
+                },
+                "plaintext_email": {
+                    "type": "boolean",
+                    "description": "Send plain-text email instead of HTML.",
+                    "fa_icon": "fas fa-remove-format",
+                    "hidden": true
+                },
                 "max_multiqc_email_size": {
                     "type": "string",
                     "description": "File size limit when attaching MultiQC reports to summary emails.",
@@ -118,6 +336,13 @@
                     "type": "boolean",
                     "description": "Do not use coloured log outputs.",
                     "fa_icon": "fas fa-palette",
+                    "hidden": true
+                },
+                "hook_url": {
+                    "type": "string",
+                    "description": "Incoming hook URL for messaging service",
+                    "fa_icon": "fas fa-people-group",
+                    "help_text": "Incoming hook URL for messaging service. Currently, MS Teams and Slack are supported.",
                     "hidden": true
                 },
                 "multiqc_config": {
@@ -145,6 +370,13 @@
                     "fa_icon": "fas fa-check-square",
                     "hidden": true
                 },
+                "pipelines_testdata_base_path": {
+                    "type": "string",
+                    "fa_icon": "far fa-check-circle",
+                    "description": "Base URL or local path to location of pipeline test dataset files",
+                    "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
+                    "hidden": true
+                },
                 "trace_report_suffix": {
                     "type": "string",
                     "fa_icon": "far calendar",
@@ -169,6 +401,24 @@
     "allOf": [
         {
             "$ref": "#/$defs/input_output_options"
+        },
+        {
+            "$ref": "#/$defs/reference_genome_options"
+        },
+        {
+            "$ref": "#/$defs/bam_options"
+        },
+        {
+            "$ref": "#/$defs/variant_calling_options"
+        },
+        {
+            "$ref": "#/$defs/genome_options"
+        },
+        {
+            "$ref": "#/$defs/transcriptome_options"
+        },
+        {
+            "$ref": "#/$defs/proteogenomic_options"
         },
         {
             "$ref": "#/$defs/institutional_config_options"

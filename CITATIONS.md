@@ -1,4 +1,4 @@
-# nf/isoseq2msdb: Citations
+# aidantay/nf-isoseq2msdb: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 
@@ -10,13 +10,28 @@
 
 ## Pipeline tools
 
-- [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+- [BCFtools](https://doi.org/10.1093/gigascience/giab008)
 
-> Andrews, S. (2010). FastQC: A Quality Control Tool for High Throughput Sequence Data [Online].
+  > Danecek, Petr, et al. "Twelve years of SAMtools and BCFtools." Gigascience 10.2 (2021): giab008. doi: 10.1093/gigascience/giab008
 
-- [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
+- [Clair3](https://pubmed.ncbi.nlm.nih.gov/38177392/)
 
-> Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
+  > Zheng Z, Li S, Su J, Leung AW, Lam TW, Luo R. Symphonizing pileup and full-alignment for deep learning-based long-read variant calling. Nat Comput Sci. 2022 Dec;2(12):797-803. doi: 10.1038/s43588-022-00387-x. PubMed PMID: 38177392.
+
+- [DeepVariant](https://www.nature.com/articles/nbt.4235)
+
+  > Poplin, R., Chang, PC., Alexander, D. et al. A universal SNP and small-indel variant caller using deep neural networks. Nat Biotechnol 36, 983–987 (2018). doi: 10.1038/nbt.4235.
+
+- [SeqKit](https://pubmed.ncbi.nlm.nih.gov/27706213/)
+
+  > Shen W, Le S, Li Y, Hu F. SeqKit: A Cross-Platform and Ultrafast Toolkit for FASTA/Q File Manipulation. PLoS One. 2016 Oct 5;11(10):e0163962. doi: 10.1371/journal.pone.0163962. PubMed PMID: 27706213; PubMed Central PMCID: PMC5051824.
+
+- [SAMtools](https://pubmed.ncbi.nlm.nih.gov/19505943/)
+
+  > Li H, Handsaker B, Wysoker A, Fennell T, Ruan J, Homer N, Marth G, Abecasis G, Durbin R; 1000 Genome Project Data Processing Subgroup. The Sequence Alignment/Map format and SAMtools. Bioinformatics. 2009 Aug 15;25(16):2078-9. doi: 10.1093/bioinformatics/btp352. Epub 2009 Jun 8. PubMed PMID: 19505943; PubMed Central PMCID: PMC2723002.
+
+- [TransDecoder](https://pubmed.ncbi.nlm.nih.gov/23845962/)
+  > Haas B.J. Papanicolaou A. Yassour M. Grabherr M. Blood P.D. Bowden J. Couger M.B. Eccles D. Li B. Lieber M. et al. De novo transcript sequence reconstruction from RNA-seq using the Trinity platform for reference generation and analysis. Nat Protoc 2013 Aug;8(8):1494-512. doi: 10.1038/nprot.2013.084. Epub 2013 Jul 11. PMID: 23845962; PMCID: PMC3875132.
 
 ## Software packaging/containerisation tools
 

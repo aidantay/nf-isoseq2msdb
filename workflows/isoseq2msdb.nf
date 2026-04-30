@@ -3,10 +3,13 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+include { PREPARE_GENOME         } from '../subworkflows/local/prepare_genome/main'
+include { BAM_MERGE_INDEX        } from '../subworkflows/local/bam_merge_index/main'
+include { BAM_VARIANTCALLING     } from '../subworkflows/local/bam_variantcalling/main'
+include { CONSENSUS_TRANSCRIPTS  } from '../subworkflows/local/consensus_transcripts/main'
+include { BED_TO_GTF             } from '../subworkflows/local/bed_to_gtf/main'
+include { TRANSCRIPTS_TO_PROTEIN } from '../subworkflows/local/transcripts_to_protein/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_isoseq2msdb_pipeline'
 
@@ -19,26 +22,97 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_isos
 workflow ISOSEQ2MSDB {
 
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
-    multiqc_config
-    multiqc_logo
-    multiqc_methods_description
+    ch_samplesheet          // channel: samplesheet read in from --input
+    ch_variantcalling_input // channel: variantcalling_input read in from --variantcalling_input
     outdir
 
     main:
+    ch_versions      = channel.empty()
 
-    def ch_versions = channel.empty()
-    def ch_multiqc_files = channel.empty()
-    //
-    // MODULE: Run FastQC
-    //
-    FASTQC(ch_samplesheet)
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.map{ _meta, file -> file })
+    /*
+    ================================================================================
+                                    Prepare reference files
+    ================================================================================
+    */
+
+    ch_fasta_raw      = params.fasta ? channel.fromPath(params.fasta).map { fasta -> [ [id:file(fasta).baseName], fasta ] }.collect() : channel.empty()
+    ch_annotation_raw = params.gtf   ? channel.fromPath(params.gtf).map   { gtf -> [ [id:file(gtf).baseName], gtf ] }.collect() :
+                        params.gff   ? channel.fromPath(params.gff).map   { gff -> [ [id:file(gff).baseName], gff ] }.collect() : channel.empty()
+
+    PREPARE_GENOME ( ch_fasta_raw, ch_annotation_raw )
+
+    ch_fasta      = PREPARE_GENOME.out.fasta
+    ch_fai        = PREPARE_GENOME.out.fai
+    ch_gzi        = PREPARE_GENOME.out.gzi
+    ch_annotation = PREPARE_GENOME.out.annotation
+
+    /*
+    ================================================================================
+                                    BAM concatenation and indexing
+    ================================================================================
+    */
+
+    BAM_MERGE_INDEX (
+        ch_samplesheet.map { meta, bams, beds -> [ meta, bams ] }
+    )
+
+    /*
+    ================================================================================
+                                    Variant calling
+    ================================================================================
+    */
+
+    if (!params.variantcalling_input) {
+        BAM_VARIANTCALLING (
+            BAM_MERGE_INDEX.out.bam_bai,
+            ch_fasta,
+            ch_fai,
+            ch_gzi
+        )
+        ch_vcf_tbi = BAM_VARIANTCALLING.out.vcf_tbi
+
+    } else {
+        ch_vcf_tbi = ch_variantcalling_input
+    }
+
+    /*
+    ================================================================================
+                                    Convert BED to GTF
+    ================================================================================
+    */
+
+    BED_TO_GTF (
+        ch_fasta.join(ch_fai),
+        ch_annotation,
+        ch_samplesheet.map { meta, bams, beds -> [ meta, beds ] }
+    )
+
+    /*
+    ================================================================================
+                                    Extract variant-aware transcript sequences
+    ================================================================================
+    */
+
+    CONSENSUS_TRANSCRIPTS (
+        ch_fasta.join(ch_fai),
+        ch_vcf_tbi,
+        BED_TO_GTF.out.transcript_annotation,
+    )
+
+    /*
+    ================================================================================
+                                    Translate transcripts into protein sequences
+    ================================================================================
+    */
+
+    TRANSCRIPTS_TO_PROTEIN (
+        CONSENSUS_TRANSCRIPTS.out.transcript_fasta
+    )
 
     //
     // Collate and save software versions
     //
-    def topic_versions = channel.topic("versions")
+    def topic_versions = Channel.topic("versions")
         .distinct()
         .branch { entry ->
             versions_file: entry instanceof Path
@@ -59,39 +133,14 @@ workflow ISOSEQ2MSDB {
         .mix(topic_versions_string)
         .collectFile(
             storeDir: "${outdir}/pipeline_info",
-            name:  'isoseq2msdb_software_'  + 'mqc_'  + 'versions.yml',
+            name: 'isoseq2msdb_software_'  + 'versions.yml',
             sort: true,
             newLine: true
         )
 
-    //
-    // MODULE: MultiQC
-    //
-    ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
-    def ch_summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
-    def ch_workflow_summary = channel.value(paramsSummaryMultiqc(ch_summary_params))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    def ch_multiqc_custom_methods_description = multiqc_methods_description
-        ? file(multiqc_methods_description, checkIfExists: true)
-        : file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true)
-    def ch_methods_description = channel.value(methodsDescriptionText(ch_multiqc_custom_methods_description))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml', sort: true))
-    MULTIQC(
-        ch_multiqc_files.flatten().collect().map { files ->
-            [
-                [id: 'isoseq2msdb'],
-                files,
-                multiqc_config
-                    ? file(multiqc_config, checkIfExists: true)
-                    : file("${projectDir}/assets/multiqc_config.yml", checkIfExists: true),
-                multiqc_logo ? file(multiqc_logo, checkIfExists: true) : [],
-                [],
-                [],
-            ]
-        }
-    )
-    emit:multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
+    emit:
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
+
 }
 
 /*

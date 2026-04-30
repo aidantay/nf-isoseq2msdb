@@ -1,0 +1,63 @@
+%%metro style: dark
+%%metro file: ref_fasta | FASTA
+%%metro file: ref_anno | GTF/GFF
+%%metro file: bam_in | BAM
+%%metro file: bed_in | BED
+%%metro line: main | Main | #2db572
+
+graph LR
+
+    subgraph prepare_genome [Input]
+        ref_fasta([ ])
+        ref_anno([ ])
+        bam_in([ ])
+    end
+    
+    subgraph bam_variantcalling [Bam Variantcalling]
+        clair3([Clair3])
+        deepvariant_rundeepvariant([DeepVariant])
+        bcftools_filter([Bcftools Filter])
+
+        clair3 -->|main| bcftools_filter
+        deepvariant_rundeepvariant -->|main| bcftools_filter
+    end
+
+    subgraph bed_to_gtf [Bed To Gtf]
+        gstama_convert([Gstama Convert])
+        gffcompare([Gffcompare])
+
+        gstama_convert -->|main| gffcompare
+    end
+
+    subgraph consensus_transcripts [Consensus Transcripts]
+        bcftools_consensus([Bcftool Consensus])
+        gffread_transcripts([Gffread])
+        seqkit_filter([Seqkit Filter])
+
+        bcftools_consensus -->|main| gffread_transcripts
+        gffread_transcripts -->|main| seqkit_filter
+    end
+
+    subgraph transcripts_to_protein [Transcripts To Protein]
+        transdecoder_longorf([TransDecoder Longorf])
+        transdecoder_predict([TransDecoder Predict])
+
+        transdecoder_longorf -->|main| transdecoder_predict
+    end
+
+    %% Inter-section edges
+    ref_fasta -->|main| clair3
+    ref_fasta -->|main| deepvariant_rundeepvariant
+    ref_anno -->|main| clair3
+    ref_anno -->|main| deepvariant_rundeepvariant
+    bam_in -->|main| clair3
+    bam_in -->|main| deepvariant_rundeepvariant
+
+    ref_fasta -->|main| gstama_convert
+    ref_anno -->|main| gstama_convert
+    bam_in -->|main| gstama_convert
+
+    bcftools_filter -->|main| bcftools_consensus
+    gffcompare -->|main| bcftools_consensus
+
+    seqkit_filter -->|main| transdecoder_longorf

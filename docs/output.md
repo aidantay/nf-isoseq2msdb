@@ -1,4 +1,4 @@
-# nf/isoseq2msdb: Output
+# aidantay/nf-isoseq2msdb: Output
 
 ## Introduction
 

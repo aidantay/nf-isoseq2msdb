@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    nf/isoseq2msdb
+    aidantay/nf-isoseq2msdb
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/nf/isoseq2msdb
+    Github : https://github.com/aidantay/nf-isoseq2msdb
 ----------------------------------------------------------------------------------------
 */
 
@@ -16,6 +16,7 @@
 include { ISOSEQ2MSDB  } from './workflows/isoseq2msdb'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_isoseq2msdb_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_isoseq2msdb_pipeline'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     NAMED WORKFLOWS FOR PIPELINE
@@ -28,22 +29,18 @@ include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_isos
 workflow NF_ISOSEQ2MSDB {
 
     take:
-    samplesheet // channel: samplesheet read in from --input
+    samplesheet          // channel: samplesheet read in from --input
+    variantcalling_input // channel: variantcalling_input read in from --variantcalling_input
 
     main:
-
     //
     // WORKFLOW: Run pipeline
     //
     ISOSEQ2MSDB (
         samplesheet,
-        params.multiqc_config,
-        params.multiqc_logo,
-        params.multiqc_methods_description,
+        variantcalling_input,
         params.outdir,
     )
-    emit:
-    multiqc_report = ISOSEQ2MSDB.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -64,6 +61,7 @@ workflow {
         args,
         params.outdir,
         params.input,
+        params.variantcalling_input,
         params.help,
         params.help_full,
         params.show_hidden
@@ -73,14 +71,17 @@ workflow {
     // WORKFLOW: Run main workflow
     //
     NF_ISOSEQ2MSDB (
-        PIPELINE_INITIALISATION.out.samplesheet
+        PIPELINE_INITIALISATION.out.samplesheet,
+        PIPELINE_INITIALISATION.out.variantcalling_input
     )
+
     //
     // SUBWORKFLOW: Run completion tasks
     //
     PIPELINE_COMPLETION (
-        params.monochrome_logs,
+        params.monochrome_logs
     )
+
 }
 
 /*
