@@ -9,6 +9,7 @@ include { BAM_VARIANTCALLING     } from '../subworkflows/local/bam_variantcallin
 include { CONSENSUS_TRANSCRIPTS  } from '../subworkflows/local/consensus_transcripts/main'
 include { BED_TO_GTF             } from '../subworkflows/local/bed_to_gtf/main'
 include { TRANSCRIPTS_TO_PROTEIN } from '../subworkflows/local/transcripts_to_protein/main'
+include { PROCESS_UNMAPPED       } from '../subworkflows/local/process_unmapped/main'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_isoseq2msdb_pipeline'
@@ -58,56 +59,68 @@ workflow ISOSEQ2MSDB {
 
     /*
     ================================================================================
-                                    Variant calling
+                                    Process unmapped reads
     ================================================================================
     */
 
-    if (!params.variantcalling_input) {
-        BAM_VARIANTCALLING (
-            BAM_MERGE_INDEX.out.bam_bai,
-            ch_fasta,
-            ch_fai,
-            ch_gzi
+    PROCESS_UNMAPPED (
+        BAM_MERGE_INDEX.out.bam_bai
+    )
+
+    if (!params.only_unmapped) {
+        /*
+        ================================================================================
+                                        Variant calling
+        ================================================================================
+        */
+
+        if (!params.variantcalling_input) {
+            BAM_VARIANTCALLING (
+                BAM_MERGE_INDEX.out.bam_bai,
+                ch_fasta,
+                ch_fai,
+                ch_gzi
+            )
+            ch_vcf_tbi = BAM_VARIANTCALLING.out.vcf_tbi
+
+        } else {
+            ch_vcf_tbi = ch_variantcalling_input
+        }
+
+        /*
+        ================================================================================
+                                        Convert BED to GTF
+        ================================================================================
+        */
+
+        BED_TO_GTF (
+            ch_fasta.join(ch_fai),
+            ch_annotation,
+            ch_samplesheet.map { meta, bams, beds -> [ meta, beds ] }
         )
-        ch_vcf_tbi = BAM_VARIANTCALLING.out.vcf_tbi
 
-    } else {
-        ch_vcf_tbi = ch_variantcalling_input
+        /*
+        ================================================================================
+                                        Extract variant-aware transcript sequences
+        ================================================================================
+        */
+
+        CONSENSUS_TRANSCRIPTS (
+            ch_fasta.join(ch_fai),
+            ch_vcf_tbi,
+            BED_TO_GTF.out.transcript_annotation,
+        )
+
+        /*
+        ================================================================================
+                                        Translate transcripts into protein sequences
+        ================================================================================
+        */
+
+        TRANSCRIPTS_TO_PROTEIN (
+            CONSENSUS_TRANSCRIPTS.out.transcript_fasta
+        )
     }
-
-    /*
-    ================================================================================
-                                    Convert BED to GTF
-    ================================================================================
-    */
-
-    BED_TO_GTF (
-        ch_fasta.join(ch_fai),
-        ch_annotation,
-        ch_samplesheet.map { meta, bams, beds -> [ meta, beds ] }
-    )
-
-    /*
-    ================================================================================
-                                    Extract variant-aware transcript sequences
-    ================================================================================
-    */
-
-    CONSENSUS_TRANSCRIPTS (
-        ch_fasta.join(ch_fai),
-        ch_vcf_tbi,
-        BED_TO_GTF.out.transcript_annotation,
-    )
-
-    /*
-    ================================================================================
-                                    Translate transcripts into protein sequences
-    ================================================================================
-    */
-
-    TRANSCRIPTS_TO_PROTEIN (
-        CONSENSUS_TRANSCRIPTS.out.transcript_fasta
-    )
 
     //
     // Collate and save software versions
